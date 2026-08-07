@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>QR Generator Pro</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Segoe UI,Tahoma,sans-serif;
+}
+
+body{
+    background:#eef2f7;
+    color:#333;
+    padding:20px;
+}
+
+.container{
+    max-width:1300px;
+    margin:auto;
+}
+
+.header{
+    background:#1976d2;
+    color:#fff;
+    padding:15px 20px;
+    border-radius:10px;
+    font-size:24px;
+    font-weight:bold;
+    margin-bottom:15px;
+}
+
+.main{
+    display:flex;
+    gap:20px;
+}
+
+.left{
+    width:45%;
+}
+
+.right{
+    width:55%;
+}
+
+.card{
+    background:#fff;
+    border-radius:10px;
+    box-shadow:0 3px 12px rgba(0,0,0,.15);
+    padding:15px;
+    margin-bottom:15px;
+}
+
+.card h3{
+    margin-bottom:10px;
+}
+
+textarea{
+    width:100%;
+    height:420px;
+    resize:none;
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:15px;
+    line-height:24px;
+    outline:none;
+}
+
+textarea:focus{
+    border-color:#1976d2;
+}
+
+.control-row{
+
+    display:flex;
+    gap:10px;
+    margin:10px 0;
+    flex-wrap:wrap;
+
+}
+
+label{
+
+    font-size:14px;
+
+}
+
+input[type=number]{
+
+    width:90px;
+    padding:7px;
+
+}
+
+input[type=color]{
+
+    width:60px;
+    height:40px;
+    padding:2px;
+
+}
+
+button{
+
+    border:none;
+    padding:10px 18px;
+    border-radius:6px;
+    cursor:pointer;
+    color:white;
+    font-size:14px;
+
+}
+
+.start{
+    background:#4caf50;
+}
+
+.pause{
+    background:#ff9800;
+}
+
+.resume{
+    background:#2196f3;
+}
+
+.stop{
+    background:#f44336;
+}
+
+.restart{
+    background:#673ab7;
+}
+
+button:hover{
+
+    opacity:.9;
+
+}
+
+#qrcode{
+
+    width:320px;
+    height:320px;
+    margin:auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid #ddd;
+    background:white;
+
+}
+
+.info{
+
+    margin-top:15px;
+    text-align:center;
+    font-size:18px;
+    font-weight:bold;
+
+}
+
+.progress{
+
+    margin-top:20px;
+    width:100%;
+    height:24px;
+    background:#ddd;
+    border-radius:30px;
+    overflow:hidden;
+
+}
+
+.progress-bar{
+
+    width:0%;
+    height:100%;
+    background:#4caf50;
+    transition:.2s;
+
+}
+
+.stats{
+
+    display:flex;
+    justify-content:space-between;
+    margin-top:15px;
+    font-size:15px;
+
+}
+
+.log{
+
+    height:180px;
+    overflow:auto;
+    background:#111;
+    color:#00ff66;
+    padding:10px;
+    font-family:Consolas;
+    border-radius:6px;
+    font-size:13px;
+
+}
+
+.current{
+
+    background:#1976d2;
+    color:white;
+
+}
+
+.footer{
+
+    margin-top:15px;
+    color:#888;
+    text-align:center;
+    font-size:13px;
+
+}
+
+@media(max-width:900px){
+
+.main{
+
+flex-direction:column;
+
+}
+
+.left,
+.right{
+
+width:100%;
+
+}
+
+textarea{
+
+height:260px;
+
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+QR Generator Pro
+</div>
+
+<div class="main">
+
+<div class="left">
+
+<div class="card">
+
+<h3>Danh sách dữ liệu</h3>
+
+<textarea id="list">
+ABC001
+ABC002
+ABC003
+ABC004
+ABC005
+ABC006
+ABC007
+ABC008
+ABC009
+ABC010
+</textarea>
+
+<div class="control-row">
+
+<label>
+
+Delay (giây)
+
+<br>
+
+<input
+id="delay"
+type="number"
+value="0.50"
+min="0.05"
+step="0.05">
+
+</label>
+
+<label>
+
+QR Size
+
+<br>
+
+<input
+id="size"
+type="number"
+value="300"
+min="100"
+max="600"
+step="100">
+
+</label>
+
+<label>
+
+QR Color
+
+<br>
+
+<input
+id="color"
+type="color"
+value="#000000">
+
+</label>
+
+</div>
+
+<div class="control-row">
+
+<button class="start" id="btnStart">▶ Start</button>
+
+<button class="pause" id="btnPause">⏸ Pause</button>
+
+<button class="resume" id="btnResume">▶ Resume</button>
+
+<button class="stop" id="btnStop">■ Stop</button>
+
+<button class="restart" id="btnRestart">↺ Restart</button>
+
+<input 
+    type="file" 
+    id="importFile" 
+    accept=".txt,.csv,.xlsx,.xls"
+    style="display:none">
+
+<button 
+    style="background:#009688"
+    onclick="document.getElementById('importFile').click()">
+📂 Import
+</button>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h3>Nhật ký</h3>
+
+<div class="log" id="log"></div>
+
+</div>
+
+</div>
+
+<div class="right">
+
+<div class="card">
+
+<div id="qrcode"></div>
+
+<div class="info" id="currentText">
+
+Chưa bắt đầu
+
+</div>
+
+<div class="progress">
+
+<div
+class="progress-bar"
+id="progressBar">
+
+</div>
+
+</div>
+
+<div class="stats">
+
+<div>
+Tổng:
+<span id="total">0</span>
+</div>
+
+<div>
+Đã chạy:
+<span id="done">0</span>
+</div>
+
+<div>
+Còn:
+<span id="remain">0</span>
+</div>
+
+</div>
+
+</div>
+
+<div class="footer">
+
+<div class="author-card">
+
+    <div class="author-title">
+        QR Generator Pro
+    </div>
+
+    <div class="author-info">
+
+        <b>Tác giả:</b> caokv<br>
+
+
+        <b>Công cụ:</b> QR Generator Auto<br>
+
+        <b>Mô tả:</b>
+        Tạo mã QR tự động theo danh sách, hỗ trợ chạy tuần tự,
+        delay tùy chỉnh, import dữ liệu và xuất QR nhanh chóng.
+
+    </div>
+
+    <div class="author-contact">
+
+        © 2026 QR Generator Pro<br>
+
+
+
+    </div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+let data=[];
+let index=0;
+
+let timer=null;
+
+let paused=false;
+
+let stopped=true;
+
+let qr=null;
+
+const textarea=document.getElementById("list");
+const qrBox=document.getElementById("qrcode");
+const current=document.getElementById("currentText");
+const log=document.getElementById("log");
+const progress=document.getElementById("progressBar");
+
+const total=document.getElementById("total");
+const done=document.getElementById("done");
+const remain=document.getElementById("remain");
+
+function addLog(text){
+
+const t=new Date().toLocaleTimeString();
+
+log.innerHTML+=`[${t}] ${text}<br>`;
+
+log.scrollTop=log.scrollHeight;
+
+}
+
+function highlightLine(i){
+
+const lines=textarea.value.split("\n");
+
+let start=0;
+
+for(let x=0;x<i;x++){
+
+start+=lines[x].length+1;
+
+}
+
+let end=start+lines[i].length;
+
+textarea.focus();
+
+textarea.setSelectionRange(start,end);
+
+}
+
+function createQR(text){
+
+    qrBox.innerHTML="";
+
+    let size=parseInt(
+        document.getElementById("size").value
+    );
+
+    let color=
+        document.getElementById("color").value;
+
+
+    qrBox.style.width=size+"px";
+    qrBox.style.height=size+"px";
+
+
+    qr=new QRCode(qrBox,{
+
+        text:text,
+
+        width:size,
+
+        height:size,
+
+        colorDark:color,
+
+        colorLight:"#ffffff",
+
+        correctLevel:QRCode.CorrectLevel.H
+
+    });
+
+}
+
+
+function updateStats(){
+
+    total.innerHTML=data.length;
+
+    done.innerHTML=index;
+
+    remain.innerHTML=data.length-index;
+
+
+    let percent=0;
+
+    if(data.length>0){
+
+        percent=(index/data.length)*100;
+
+    }
+
+    progress.style.width=
+        percent+"%";
+
+}
+
+
+function runQR(){
+
+    if(stopped || paused){
+
+        return;
+
+    }
+
+
+    if(index>=data.length){
+
+        addLog("=== Hoàn thành ===");
+
+        stopped=true;
+
+        progress.style.width="100%";
+
+        current.innerHTML="Đã hoàn thành";
+
+        return;
+
+    }
+
+
+    let text=data[index];
+
+
+    highlightLine(index);
+
+
+    // Auto scroll textarea tới dòng hiện tại
+
+    let lines=textarea.value.split("\n");
+
+    let lineHeight=24;
+
+    textarea.scrollTop=
+        index*lineHeight -
+        textarea.clientHeight/2;
+
+
+
+    createQR(text);
+
+
+    current.innerHTML=
+        "Đang tạo: "+text;
+
+
+    addLog(
+        "Tạo QR: "+text
+    );
+
+
+    index++;
+
+    updateStats();
+
+}
+
+
+
+function start(){
+
+    stop();
+
+
+    data=textarea.value
+        .split("\n")
+        .map(x=>x.trim())
+        .filter(x=>x!="");
+
+
+    if(data.length===0){
+
+        alert(
+            "Danh sách trống"
+        );
+
+        return;
+
+    }
+
+
+    index=0;
+
+    stopped=false;
+
+    paused=false;
+
+
+    updateStats();
+
+
+    let delay=
+        parseFloat(
+            document.getElementById("delay").value
+        );
+
+
+    if(delay<0.05){
+
+        delay=0.05;
+
+    }
+
+
+    runQR();
+
+
+    timer=setInterval(
+
+        runQR,
+
+        delay*1000
+
+    );
+
+}
+
+
+
+function pause(){
+
+    paused=true;
+
+    addLog(
+        "Tạm dừng"
+    );
+
+}
+
+
+
+function resume(){
+
+    if(stopped){
+
+        return;
+
+    }
+
+
+    paused=false;
+
+
+    addLog(
+        "Tiếp tục"
+    );
+
+}
+
+
+
+function stop(){
+
+    clearInterval(timer);
+
+    timer=null;
+
+    stopped=true;
+
+    paused=false;
+
+}
+
+
+
+function restart(){
+
+    stop();
+
+
+    index=0;
+
+
+    progress.style.width="0%";
+
+
+    done.innerHTML=0;
+
+
+    remain.innerHTML=data.length;
+
+
+    current.innerHTML=
+        "Khởi động lại";
+
+
+    addLog(
+        "Restart"
+    );
+
+
+    start();
+
+}
+
+
+
+// Sự kiện nút
+
+document
+.getElementById("btnStart")
+.onclick=start;
+
+
+document
+.getElementById("btnPause")
+.onclick=pause;
+
+
+document
+.getElementById("btnResume")
+.onclick=resume;
+
+
+document
+.getElementById("btnStop")
+.onclick=stop;
+
+
+document
+.getElementById("btnRestart")
+.onclick=restart;
+
+
+
+// Khi thay đổi màu QR
+document
+.getElementById("color")
+.onchange=function(){
+
+    if(index>0){
+
+        let last=data[index-1];
+
+        createQR(last);
+
+    }
+
+};
+
+
+// Khi đổi kích thước QR
+document
+.getElementById("size")
+.onchange=function(){
+
+    if(index>0){
+
+        let last=data[index-1];
+
+        createQR(last);
+
+    }
+
+};
+
+
+
+
+
+
+<!-- TIỆN ÍCH BỔ SUNG -->
+
+
+
+// ===============================
+// IMPORT TXT / CSV / EXCEL XLSX
+// ===============================
+
+document
+.getElementById("importFile")
+.addEventListener("change", function(e){
+
+    let file = e.target.files[0];
+
+    if(!file){
+        return;
+    }
+
+
+    let name = file.name.toLowerCase();
+
+
+    // Excel
+    if(
+        name.endsWith(".xlsx") ||
+        name.endsWith(".xls")
+    ){
+
+        let reader = new FileReader();
+
+
+        reader.onload=function(event){
+
+            let data = new Uint8Array(
+                event.target.result
+            );
+
+
+            let workbook =
+                XLSX.read(
+                    data,
+                    {
+                        type:"array"
+                    }
+                );
+
+
+            // lấy sheet đầu tiên
+
+            let sheet =
+                workbook.Sheets[
+                    workbook.SheetNames[0]
+                ];
+
+
+            let rows =
+                XLSX.utils.sheet_to_json(
+                    sheet,
+                    {
+                        header:1
+                    }
+                );
+
+
+            let list=[];
+
+
+            rows.forEach(function(row){
+
+                if(row.length>0){
+
+                    // lấy cột đầu tiên
+
+                    let value=
+                        String(row[0]).trim();
+
+
+                    if(value!=""){
+
+                        list.push(value);
+
+                    }
+
+                }
+
+            });
+
+
+
+            if(list.length==0){
+
+                alert(
+                    "Excel không có dữ liệu"
+                );
+
+                return;
+
+            }
+
+
+
+            textarea.value=
+                list.join("\n");
+
+
+
+            addLog(
+                "Import Excel: "
+                +list.length+
+                " dòng"
+            );
+
+
+            updateStats();
+
+
+        };
+
+
+        reader.readAsArrayBuffer(file);
+
+
+    }
+
+    // TXT / CSV
+
+    else{
+
+
+        let reader=new FileReader();
+
+
+        reader.onload=function(event){
+
+
+            let lines=
+                event.target.result
+                .split(/\r?\n/)
+                .map(x=>x.trim())
+                .filter(x=>x!="");
+
+
+
+            textarea.value=
+                lines.join("\n");
+
+
+            addLog(
+                "Import file: "
+                +lines.length+
+                " dòng"
+            );
+
+
+            updateStats();
+
+
+        };
+
+
+        reader.readAsText(file);
+
+
+    }
+
+
+});
+
+
+// ===============================
+// LƯU CẤU HÌNH
+// ===============================
+
+
+function saveSetting(){
+
+    localStorage.setItem(
+        "qr_delay",
+        document.getElementById("delay").value
+    );
+
+
+    localStorage.setItem(
+        "qr_size",
+        document.getElementById("size").value
+    );
+
+
+    localStorage.setItem(
+        "qr_color",
+        document.getElementById("color").value
+    );
+
+}
+
+
+
+function loadSetting(){
+
+    let delay=
+        localStorage.getItem("qr_delay");
+
+
+    let size=
+        localStorage.getItem("qr_size");
+
+
+    let color=
+        localStorage.getItem("qr_color");
+
+
+
+    if(delay){
+
+        document.getElementById("delay").value=delay;
+
+    }
+
+
+    if(size){
+
+        document.getElementById("size").value=size;
+
+    }
+
+
+    if(color){
+
+        document.getElementById("color").value=color;
+
+    }
+
+}
+
+
+
+document
+.getElementById("delay")
+.onchange=saveSetting;
+
+
+document
+.getElementById("size")
+.onchange=saveSetting;
+
+
+document
+.getElementById("color")
+.onchange=saveSetting;
+
+
+
+loadSetting();
+
+
+
+// ===============================
+// XÓA NHẬT KÝ BẰNG DOUBLE CLICK
+// ===============================
+
+
+log.ondblclick=function(){
+
+    log.innerHTML="";
+
+};
+
+
+
+// ===============================
+// FULLSCREEN QR
+// ===============================
+
+
+qrBox.onclick=function(){
+
+
+    if(qrBox.requestFullscreen){
+
+        qrBox.requestFullscreen();
+
+    }
+
+};
+
+
+
+// ===============================
+// PHÍM TẮT
+// ===============================
+
+document.onkeydown=function(e){
+
+
+    // Space = Pause / Resume
+
+    if(e.code==="Space"){
+
+        e.preventDefault();
+
+
+        if(paused){
+
+            resume();
+
+        }
+        else{
+
+            pause();
+
+        }
+
+    }
+
+
+
+    // Enter = Start
+
+    if(e.key==="Enter"){
+
+        if(stopped){
+
+            start();
+
+        }
+
+    }
+
+
+
+    // ESC = Stop
+
+    if(e.key==="Escape"){
+
+        stop();
+
+    }
+
+
+};
+
+
+
+// ===============================
+// KIỂM TRA DELAY
+// ===============================
+
+
+document
+.getElementById("delay")
+.oninput=function(){
+
+
+    let value=parseFloat(this.value);
+
+
+    if(isNaN(value) || value<0.05){
+
+        this.value="0.05";
+
+    }
+
+
+    saveSetting();
+
+};
+
+
+
+// ===============================
+// KIỂM TRA SIZE QR
+// ===============================
+
+
+document
+.getElementById("size")
+.oninput=function(){
+
+
+    let value=parseInt(this.value);
+
+
+    if(value<100){
+
+        this.value=100;
+
+    }
+
+
+    if(value>600){
+
+        this.value=600;
+
+    }
+
+
+    saveSetting();
+
+
+};
+
+
+
+// ===============================
+// TỰ CẬP NHẬT QR KHI ĐANG HIỂN THỊ
+// ===============================
+
+
+setInterval(function(){
+
+
+    if(!stopped && index>0){
+
+        let text=data[index-1];
+
+        createQR(text);
+
+    }
+
+
+},1000);
+
+
+
+// ===============================
+// KHỞI TẠO
+// ===============================
+
+
+addLog(
+    "QR Generator Pro sẵn sàng"
+);
+
+
+updateStats();
+
+
+</script>
+
+
+</body>
+</html>
